@@ -1,0 +1,57 @@
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        function populateDropdown(url, targetId, parentId) {
+            $.ajax({
+                url: url,
+                data: { parent: parentId },
+                dataType: 'json',
+                success: function (data) {
+                    var options = '<option value="">Select...</option>';
+                    $.each(data, function (index, item) {
+                        options += '<option value="' + item.id + '">' + item.name + '</option>';
+                    });
+                    $('#' + targetId).html(options);
+                }
+            });
+        }
+
+        $('#id_sex').wrap("<p></p>")
+        $('#id_location').closest("p").hide()
+
+        $('#id_first_name').wrap("<p></p>")
+        $('#id_last_name').wrap("<p></p>")
+        $("#id_first_name").closest("p").before("<label>First name</label>")
+        $("#id_last_name").closest("p").before("<label>Last name</label>")
+
+        var country_dropdown = "<label>Country</label><select id='country'><option value='0'>Rwanda</option></select><br>"
+        var province_dropdown = "<label>Province</label><select id='province'></select><br>"
+        var district_dropdown = "<label>District</label><select id='district'></select><br>"
+        var sector_dropdown = "<label>Sector</label><select id='sector'></select><br>"
+        var cell_dropdown = "<label>Cell</label><select id='cell' name='location'></select><br>"
+        $("form").prepend(cell_dropdown)
+        $("form").prepend(sector_dropdown)
+        $("form").prepend(district_dropdown)
+        $("form").prepend(province_dropdown)
+        $("form").prepend(country_dropdown)
+
+        $('#province').change(function () {
+            populateDropdown('/api/locations/district/', 'district', $(this).val());
+        });
+
+        $('#district').change(function () {
+            populateDropdown('/api/locations/sector/', 'sector', $(this).val());
+        });
+
+        $('#sector').change(function () {
+            populateDropdown('/api/locations/cell/', 'cell', $(this).val());
+        });
+
+        populateDropdown('/api/locations/province/', 'province', '0');
+    });
+</script>
