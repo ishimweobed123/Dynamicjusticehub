@@ -1,57 +1,139 @@
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-</form>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function () {
-        function populateDropdown(url, targetId, parentId) {
-            $.ajax({
-                url: url,
-                data: { parent: parentId },
-                dataType: 'json',
-                success: function (data) {
-                    var options = '<option value="">Select...</option>';
-                    $.each(data, function (index, item) {
-                        options += '<option value="' + item.id + '">' + item.name + '</option>';
-                    });
-                    $('#' + targetId).html(options);
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Form</title>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_first_name">First Name</label>
+            {{ form.first_name }}
+        </div>
+        <div class="form-group">
+            <label for="id_last_name">Last Name</label>
+            {{ form.last_name }}
+        </div>
+        <div class="form-group">
+            <label for="id_sex">Sex</label>
+            {{ form.sex }}
+        </div>
+        
+        <!-- Hidden location field -->
+        <div style="display: none;">
+            {{ form.location }}
+        </div>
+
+        <!-- Location dropdowns -->
+        <div class="form-group">
+            <label for="country">Country</label>
+            <select id="country" disabled>
+                <option value="0">Rwanda</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="province">Province</label>
+            <select id="province">
+                <option value="">Select Province...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="district">District</label>
+            <select id="district" disabled>
+                <option value="">Select District...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="sector">Sector</label>
+            <select id="sector" disabled>
+                <option value="">Select Sector...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="cell">Cell</label>
+            <select id="cell" disabled>
+                <option value="">Select Cell...</option>
+            </select>
+        </div>
+
+        <button type="submit">Save</button>
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Function to populate dropdown
+            function populateDropdown(url, targetId, parentId) {
+                const $target = $('#' + targetId);
+                $target.prop('disabled', true);
+                
+                $.ajax({
+                    url: url,
+                    data: { parent: parentId },
+                    dataType: 'json',
+                    success: function(data) {
+                        let options = '<option value="">Select...</option>';
+                        data.forEach(function(item) {
+                            options += `<option value="${item.id}">${item.name}</option>`;
+                        });
+                        $target.html(options);
+                        $target.prop('disabled', false);
+                    },
+                    error: function() {
+                        $target.html('<option value="">Error loading data...</option>');
+                    }
+                });
+            }
+
+            // Initial load of provinces
+            populateDropdown('/api/locations/province/', 'province', '0');
+
+            // Province change handler
+            $('#province').change(function() {
+                const provinceId = $(this).val();
+                if (provinceId) {
+                    populateDropdown('/api/locations/district/', 'district', provinceId);
+                    $('#district, #sector, #cell').html('<option value="">Select...</option>').prop('disabled', true);
+                    $('#id_location').val('');
                 }
             });
-        }
 
-        $('#id_sex').wrap("<p></p>")
-        $('#id_location').closest("p").hide()
+            // District change handler
+            $('#district').change(function() {
+                const districtId = $(this).val();
+                if (districtId) {
+                    populateDropdown('/api/locations/sector/', 'sector', districtId);
+                    $('#sector, #cell').html('<option value="">Select...</option>').prop('disabled', true);
+                    $('#id_location').val('');
+                }
+            });
 
-        $('#id_first_name').wrap("<p></p>")
-        $('#id_last_name').wrap("<p></p>")
-        $("#id_first_name").closest("p").before("<label>First name</label>")
-        $("#id_last_name").closest("p").before("<label>Last name</label>")
+            // Sector change handler
+            $('#sector').change(function() {
+                const sectorId = $(this).val();
+                if (sectorId) {
+                    populateDropdown('/api/locations/cell/', 'cell', sectorId);
+                    $('#cell').html('<option value="">Select...</option>').prop('disabled', true);
+                    $('#id_location').val('');
+                }
+            });
 
-        var country_dropdown = "<label>Country</label><select id='country'><option value='0'>Rwanda</option></select><br>"
-        var province_dropdown = "<label>Province</label><select id='province'></select><br>"
-        var district_dropdown = "<label>District</label><select id='district'></select><br>"
-        var sector_dropdown = "<label>Sector</label><select id='sector'></select><br>"
-        var cell_dropdown = "<label>Cell</label><select id='cell' name='location'></select><br>"
-        $("form").prepend(cell_dropdown)
-        $("form").prepend(sector_dropdown)
-        $("form").prepend(district_dropdown)
-        $("form").prepend(province_dropdown)
-        $("form").prepend(country_dropdown)
+            // Cell change handler
+            $('#cell').change(function() {
+                const cellId = $(this).val();
+                if (cellId) {
+                    $('#id_location').val(cellId);
+                }
+            });
 
-        $('#province').change(function () {
-            populateDropdown('/api/locations/district/', 'district', $(this).val());
+            // If editing a user, populate the dropdowns based on the existing location
+            const existingLocationId = $('#id_location').val();
+            if (existingLocationId) {
+                // Logic to populate dropdowns based on existing location will go here
+                // This would require additional backend support to get the full location hierarchy
+            }
         });
-
-        $('#district').change(function () {
-            populateDropdown('/api/locations/sector/', 'sector', $(this).val());
-        });
-
-        $('#sector').change(function () {
-            populateDropdown('/api/locations/cell/', 'cell', $(this).val());
-        });
-
-        populateDropdown('/api/locations/province/', 'province', '0');
-    });
-</script>
+    </script>
+</body>
+</html>
