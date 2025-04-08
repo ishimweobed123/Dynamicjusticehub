@@ -86,6 +86,51 @@
                 });
             }
 
+            // Function to populate dropdowns based on existing location
+            function populateLocationDropdowns(locationId) {
+                if (!locationId) return;
+                
+                $.ajax({
+                    url: `/api/locations/hierarchy/${locationId}/`,
+                    dataType: 'json',
+                    success: function(hierarchy) {
+                        if (hierarchy) {
+                            // Populate province
+                            if (hierarchy.province) {
+                                populateDropdown('/api/locations/province/', 'province', '0');
+                                setTimeout(() => {
+                                    $('#province').val(hierarchy.province.id);
+                                    $('#province').trigger('change');
+                                    
+                                    // Populate district
+                                    if (hierarchy.district) {
+                                        setTimeout(() => {
+                                            $('#district').val(hierarchy.district.id);
+                                            $('#district').trigger('change');
+                                            
+                                            // Populate sector
+                                            if (hierarchy.sector) {
+                                                setTimeout(() => {
+                                                    $('#sector').val(hierarchy.sector.id);
+                                                    $('#sector').trigger('change');
+                                                    
+                                                    // Populate cell
+                                                    if (hierarchy.cell) {
+                                                        setTimeout(() => {
+                                                            $('#cell').val(hierarchy.cell.id);
+                                                        }, 100);
+                                                    }
+                                                }, 100);
+                                            }
+                                        }, 100);
+                                    }
+                                }, 100);
+                            }
+                        }
+                    }
+                });
+            }
+
             // Initial load of provinces
             populateDropdown('/api/locations/province/', 'province', '0');
 
@@ -130,8 +175,7 @@
             // If editing a user, populate the dropdowns based on the existing location
             const existingLocationId = $('#id_location').val();
             if (existingLocationId) {
-                // Logic to populate dropdowns based on existing location will go here
-                // This would require additional backend support to get the full location hierarchy
+                populateLocationDropdowns(existingLocationId);
             }
         });
     </script>

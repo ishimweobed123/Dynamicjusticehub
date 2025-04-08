@@ -1,10 +1,255 @@
-<h1>Users</h1>
-<a href="{% url 'user_create' %}">Create User</a>
-<ul>
-    {% for user in users %}
-    <li>{{ user.first_name }} {{ user.last_name }} - {{ user.location }}
-        <a href="{% url 'user_update' user.pk %}">Edit</a>
-        <a href="{% url 'user_delete' user.pk %}">Delete</a>
-    </li>
-    {% endfor %}
-</ul>
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Management</title>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-link {
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Management</h1>
+    <button class="btn btn-primary" onclick="openCreateModal()">Create New User</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Sex</th>
+                <th>Location</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.first_name }}</td>
+                <td>{{ user.last_name }}</td>
+                <td>{{ user.get_sex_display }}</td>
+                <td>{{ user.location.name }}</td>
+                <td>
+                    <a href="{% url 'user_detail' user.id %}" class="btn-link">View More</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Create Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCreateModal()">&times;</span>
+            <h2>Create New User</h2>
+            <form id="createForm" method="post" action="{% url 'user_create' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_first_name">First Name</label>
+                    <input type="text" name="first_name" id="id_first_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_last_name">Last Name</label>
+                    <input type="text" name="last_name" id="id_last_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_sex">Sex</label>
+                    <select name="sex" id="id_sex" required>
+                        <option value="">Select...</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <select id="country" disabled>
+                        <option value="0">Rwanda</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="province">Province</label>
+                    <select id="province">
+                        <option value="">Select Province...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="district">District</label>
+                    <select id="district" disabled>
+                        <option value="">Select District...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sector">Sector</label>
+                    <select id="sector" disabled>
+                        <option value="">Select Sector...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cell">Cell</label>
+                    <select id="cell" name="location" disabled>
+                        <option value="">Select Cell...</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Modal functions
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'block';
+            populateDropdown('/api/locations/province/', 'province', '0');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Form submission handlers
+        $('#createForm').on('submit', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                method: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    location.reload();
+                }
+            });
+        });
+
+        // Location dropdown functions
+        function populateDropdown(url, targetId, parentId) {
+            const $target = $('#' + targetId);
+            $target.prop('disabled', true);
+            
+            $.ajax({
+                url: url,
+                data: { parent: parentId },
+                dataType: 'json',
+                success: function(data) {
+                    let options = '<option value="">Select...</option>';
+                    data.forEach(function(item) {
+                        options += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                    $target.html(options);
+                    $target.prop('disabled', false);
+                }
+            });
+        }
+
+        // Location dropdown change handlers
+        function setupLocationHandlers(prefix = '') {
+            $(`#${prefix}province`).change(function() {
+                const provinceId = $(this).val();
+                if (provinceId) {
+                    populateDropdown('/api/locations/district/', prefix + 'district', provinceId);
+                    $(`#${prefix}district, #${prefix}sector, #${prefix}cell`).html('<option value="">Select...</option>').prop('disabled', true);
+                }
+            });
+
+            $(`#${prefix}district`).change(function() {
+                const districtId = $(this).val();
+                if (districtId) {
+                    populateDropdown('/api/locations/sector/', prefix + 'sector', districtId);
+                    $(`#${prefix}sector, #${prefix}cell`).html('<option value="">Select...</option>').prop('disabled', true);
+                }
+            });
+
+            $(`#${prefix}sector`).change(function() {
+                const sectorId = $(this).val();
+                if (sectorId) {
+                    populateDropdown('/api/locations/cell/', prefix + 'cell', sectorId);
+                    $(`#${prefix}cell`).html('<option value="">Select...</option>').prop('disabled', true);
+                }
+            });
+        }
+
+        // Initialize location handlers
+        setupLocationHandlers();
+    </script>
+</body>
+</html>
