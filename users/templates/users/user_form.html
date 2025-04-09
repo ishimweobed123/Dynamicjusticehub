@@ -4,6 +4,29 @@
 <head>
     <title>User Form</title>
 </head>
+<style>
+    .minimal-button {
+  padding: 0.5rem 1rem;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  color: #333;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.minimal-button:hover {
+  background-color: #eaeaea;
+  border-color: #bbb;
+}
+
+.minimal-button:focus {
+  outline: none;
+  border-color: #999;
+}
+
+</style>
 <body>
     <form method="post">
         {% csrf_token %}
@@ -57,7 +80,9 @@
             </select>
         </div>
 
-        <button type="submit">Save</button>
+        <!-- <button type="submit">Save</button> -->
+        <button type="submit" class="minimal-button">Save</button>
+
     </form>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

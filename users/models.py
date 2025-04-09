@@ -32,6 +32,7 @@ class User(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 def get_parent_id(location_id):
+
     """
     Determines the parent ID of a given location based on the location ID structure.
     
@@ -55,6 +56,7 @@ def get_parent_id(location_id):
     Returns:
         int or None: The parent location ID, or None if the location is the country
     """
+    
     # Convert location_id to string for manipulation
     str_id = str(location_id)
     
